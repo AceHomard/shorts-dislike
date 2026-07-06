@@ -3,7 +3,8 @@
   "name": "Dislike for Shorts",
   "version": "0.1.0",
   "description": "Adds a working dislike button back to YouTube Shorts.",
-  "homepage_url": "https://github.com/YOUR_USERNAME/shorts-dislike",
+  "homepage_url": "https://github.com/AceHomard/shorts-dislike",
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
@@ -20,7 +21,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "shorts-dislike@laizy.io",
+      "id": "shorts-dislike@acehomard",
       "strict_min_version": "128.0"
     }
   }

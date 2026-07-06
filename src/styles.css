@@ -1,5 +1,8 @@
 /* Dislike button injected into the Shorts action bar.
-   Styled to blend with YouTube's round action buttons in light and dark themes. */
+   Theme: keyed off the `dark` attribute YouTube puts on its own DOM (its real
+   theme signal), NOT the OS `prefers-color-scheme` and NOT a CSS variable — the
+   --yt-spec-* variables don't reliably resolve inside our injected button, which
+   made the icon fall back to black (invisible in dark mode). */
 
 .sd-dislike-btn {
   display: inline-flex;
@@ -12,31 +15,29 @@
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  color: var(--yt-spec-text-primary, #0f0f0f);
-  background: var(--yt-spec-badge-chip-background, rgba(0, 0, 0, 0.05));
+  color: #0f0f0f; /* light theme (default) */
+  background: rgba(0, 0, 0, 0.05);
   transition: background 0.15s ease, transform 0.1s ease;
 }
 
 .sd-dislike-btn:hover {
-  background: var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.1));
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .sd-dislike-btn:active {
   transform: scale(0.92);
 }
 
-/* When the current Short has been disliked, fill the icon so the state is obvious. */
-.sd-dislike-btn.sd-active {
-  color: #fff;
-  background: #f00;
+/* Dark theme: any ancestor carrying YouTube's `dark` attribute flips us to light
+   ink on a translucent light fill. Covers <html dark>, <ytd-app dark>, etc. */
+[dark] .sd-dislike-btn {
+  color: #f1f1f1;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
-  .sd-dislike-btn {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .sd-dislike-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
+[dark] .sd-dislike-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
+
+/* Disliked state: the icon swaps to a solid thumb (handled in content.js). Colour
+   comes from the rules above, so no override here (that's what forced it black). */
