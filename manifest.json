@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Dislike for Shorts",
+  "version": "0.1.0",
+  "description": "Adds a working dislike button back to YouTube Shorts.",
+  "homepage_url": "https://github.com/YOUR_USERNAME/shorts-dislike",
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/content.js"],
+      "css": ["src/styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/bridge.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "shorts-dislike@laizy.io",
+      "strict_min_version": "128.0"
+    }
+  }
+}

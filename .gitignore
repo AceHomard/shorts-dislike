@@ -1,0 +1,14 @@
+# Build artifacts / packaged extensions
+*.zip
+*.xpi
+dist/
+web-ext-artifacts/
+
+# Dependencies (if you later add tooling)
+node_modules/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log

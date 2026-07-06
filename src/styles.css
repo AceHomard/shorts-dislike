@@ -1,0 +1,42 @@
+/* Dislike button injected into the Shorts action bar.
+   Styled to blend with YouTube's round action buttons in light and dark themes. */
+
+.sd-dislike-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 8px 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--yt-spec-text-primary, #0f0f0f);
+  background: var(--yt-spec-badge-chip-background, rgba(0, 0, 0, 0.05));
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.sd-dislike-btn:hover {
+  background: var(--yt-spec-10-percent-layer, rgba(0, 0, 0, 0.1));
+}
+
+.sd-dislike-btn:active {
+  transform: scale(0.92);
+}
+
+/* When the current Short has been disliked, fill the icon so the state is obvious. */
+.sd-dislike-btn.sd-active {
+  color: #fff;
+  background: #f00;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sd-dislike-btn {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .sd-dislike-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
