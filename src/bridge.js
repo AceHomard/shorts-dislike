@@ -1,4 +1,4 @@
-// bridge.js — runs in the MAIN (page) world.
+// bridge.js runs in the MAIN (page) world.
 // It has access to YouTube's `window.ytcfg` and to same-origin cookies, so it can
 // replay the exact InnerTube request the real dislike button makes.
 //
@@ -15,7 +15,7 @@
 (() => {
   // Idempotency guard. MAIN-world scripts live in the page and are NOT torn down
   // when the extension reloads, so multiple copies can pile up (each would fire
-  // its own dislike request — the "one click, N calls" bug). Only the first wins.
+  // its own dislike request, the "one click, N calls" bug). Only the first wins.
   if (window.__sdBridgeReady) return;
   window.__sdBridgeReady = true;
 

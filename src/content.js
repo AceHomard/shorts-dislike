@@ -1,4 +1,4 @@
-// content.js — runs in the ISOLATED world.
+// content.js runs in the ISOLATED world.
 // Job: detect the active Short, inject a dislike button next to the like button,
 // ask the page-context bridge (bridge.js) to perform the actual dislike call, and
 // remember which Shorts were disliked so the button state persists across visits.
@@ -49,7 +49,7 @@ function isVisible(el) {
 }
 
 // Find the like button of the Short currently on screen.
-// NOTE: these selectors are the most fragile part of the extension — YouTube
+// NOTE: these selectors are the most fragile part of the extension YouTube
 // changes its DOM often and rolls updates out unevenly. If injection stops
 // working, this is the function to fix: inspect the thumbs-up in DevTools and
 // update the selectors below.
@@ -73,7 +73,7 @@ function findLikeButton() {
 //  - inactive: the "ytSpec" outlined thumb-down (from the real /watch button, so
 //    ours looks identical).
 //  - active: a solid thumb-down, filled with the button's text color (white in
-//    dark mode, dark in light mode) — no coloured background.
+//    dark mode, dark in light mode) no coloured background.
 const ICON_OUTLINE =
   "m11.31 2 .392.007c1.824.06 3.61.534 5.223 1.388l.343.189.27.154c.264.152.56.24.863.26l.13.004H20.5a1.5 1.5 0 011.5 1.5V11.5a1.5 1.5 0 01-1.5 1.5h-1.79l-.158.013a1 1 0 00-.723.512l-.064.145-2.987 8.535a1 1 0 01-1.109.656l-1.04-.174a4 4 0 01-3.251-4.783L10 15H5.938a3.664 3.664 0 01-3.576-2.868A3.682 3.682 0 013 9.15l-.02-.088A3.816 3.816 0 014 5.5v-.043l.008-.227a2.86 2.86 0 01.136-.664l.107-.28A3.754 3.754 0 017.705 2h3.605ZM7.705 4c-.755 0-1.425.483-1.663 1.2l-.032.126a.818.818 0 00-.01.131v.872l-.587.586a1.816 1.816 0 00-.524 1.465l.038.23.02.087.21.9-.55.744a1.686 1.686 0 00-.321 1.18l.029.177c.17.76.844 1.302 1.623 1.302H10a2.002 2.002 0 011.956 2.419l-.623 2.904-.034.208a2.002 2.002 0 001.454 2.139l.206.045.21.035 2.708-7.741A3.001 3.001 0 0118.71 11H20V6.002h-1.47c-.696 0-1.38-.183-1.985-.528l-.27-.155-.285-.157A10.002 10.002 0 0011.31 4H7.705Z";
 // YouTube's real filled dislike icon (captured from the active /watch button).
@@ -122,7 +122,7 @@ function inject() {
 
   const host = like.closest("ytd-reel-video-renderer") || like.parentElement;
   if (!host || host.querySelector("." + BTN_CLASS)) {
-    reflectState(); // button already there — just make sure its state is current
+    reflectState(); // button already there just make sure its state is current
     return;
   }
 

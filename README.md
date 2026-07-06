@@ -6,12 +6,12 @@ YouTube Shorts**.
 In June 2026, YouTube removed the dislike button from the Shorts player. The
 dislike action still works fine on regular videos, and the internal endpoint
 (`/youtubei/v1/like/dislike`) still accepts requests for Shorts. This extension
-re-adds the button to the Shorts UI and sends the dislike through that endpoint —
+re-adds the button to the Shorts UI and sends the dislike through that endpoint
 the same call YouTube's own web client makes.
 
 > **Honest status:** early / experimental (`v0.1.0`). A `200` response means the
 > request was accepted. It does **not** prove YouTube still factors Shorts
-> dislikes into recommendations — that's not verifiable from outside. This tool
+> dislikes into recommendations, that's not verifiable from outside. This tool
 > restores the *button and the action*, nothing more is promised.
 
 ## Why this approach is more robust
@@ -63,8 +63,7 @@ Then open any Short and look for the 👎 button next to the like button.
 
 ## Contributing
 
-Issues and PRs welcome. This is a small project — good for a first open-source
-contribution.
+This is a small project but Issues and PRs welcome.
 
 ## License
 

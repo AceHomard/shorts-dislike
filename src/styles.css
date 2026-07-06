@@ -1,6 +1,6 @@
 /* Dislike button injected into the Shorts action bar.
    Theme: keyed off the `dark` attribute YouTube puts on its own DOM (its real
-   theme signal), NOT the OS `prefers-color-scheme` and NOT a CSS variable — the
+   theme signal), NOT the OS `prefers-color-scheme` and NOT a CSS variable the
    --yt-spec-* variables don't reliably resolve inside our injected button, which
    made the icon fall back to black (invisible in dark mode). */
 
