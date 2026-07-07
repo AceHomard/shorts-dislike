@@ -4,6 +4,21 @@
   "version": "0.1.0",
   "description": "Adds a working dislike button back to YouTube Shorts.",
   "homepage_url": "https://github.com/AceHomard/shorts-dislike",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "Dislike for Shorts",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
   "permissions": ["storage"],
   "content_scripts": [
     {
