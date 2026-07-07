@@ -23,6 +23,12 @@ const store = (globalThis.browser || globalThis.chrome).storage.local;
 // lot), mirrored to storage so it survives navigations and browser restarts.
 const disliked = new Set();
 
+// videoIds whose real server likeStatus we've already fetched this session, and
+// those with a status fetch in flight. Keeps reconciliation to one request per
+// Short even though inject() runs on every DOM mutation frame.
+const reconciled = new Set();
+const statusPending = new Set();
+
 function persist() {
   const obj = {};
   disliked.forEach((id) => (obj[id] = 1));
@@ -117,6 +123,11 @@ function inject() {
     return;
   }
 
+  // M2: once per visible Short, ask YouTube for the real like state and reconcile
+  // our local memory with it. storage.local paints instantly (below); this quietly
+  // corrects it if the truth differs (e.g. a dislike made on /watch).
+  maybeReconcile();
+
   const like = findLikeButton();
   if (!like) return; // Short DOM not ready yet, or selectors outdated
 
@@ -172,6 +183,57 @@ function requestDislike(videoId, action) {
   window.addEventListener("message", onReply);
   window.postMessage(
     { tag: MSG, dir: "request", nonce, videoId, action },
+    location.origin
+  );
+}
+
+// --- reconciliation (M2) ---------------------------------------------------
+
+// Fetch the visible Short's real server likeStatus once per session and align
+// our local state with it. Skips if already fetched, in flight, or if a dislike
+// call is in flight (that click is the newer truth, don't clobber it).
+function maybeReconcile() {
+  const id = currentShortId();
+  if (!id || reconciled.has(id) || statusPending.has(id) || STATE.pending) return;
+  requestStatus(id);
+}
+
+function requestStatus(videoId) {
+  statusPending.add(videoId);
+  const nonce = "st:" + String(performance.now()) + ":" + Math.random();
+
+  function onReply(ev) {
+    const d = ev.data;
+    if (ev.source !== window || !d || d.tag !== MSG || d.dir !== "response") return;
+    if (d.nonce !== nonce) return;
+    window.removeEventListener("message", onReply);
+    statusPending.delete(videoId);
+    reconciled.add(videoId); // don't retry this Short even on failure (avoid storms)
+
+    if (!d.ok) {
+      console.debug("[shorts-dislike] status fetch failed:", d.error);
+      return;
+    }
+    if (d.likeStatus == null) {
+      console.debug("[shorts-dislike] likeStatus not found in next payload");
+      return;
+    }
+    // A dislike may have landed while this was in flight; that click wins.
+    if (STATE.pending) return;
+
+    const serverDisliked = d.likeStatus === "DISLIKE";
+    if (serverDisliked === disliked.has(videoId)) return; // already in sync
+
+    if (serverDisliked) disliked.add(videoId);
+    else disliked.delete(videoId);
+    persist();
+    reflectState();
+    console.debug("[shorts-dislike] reconciled", videoId, "->", d.likeStatus);
+  }
+
+  window.addEventListener("message", onReply);
+  window.postMessage(
+    { tag: MSG, dir: "request", kind: "status", nonce, videoId },
     location.origin
   );
 }

@@ -53,13 +53,8 @@
     };
   }
 
-  async function dislike(videoId, action) {
-    const it = innertube();
-    if (!it || !it.context) throw new Error("ytcfg / INNERTUBE_CONTEXT unavailable");
-
-    // action: "DISLIKE" to dislike, "INDIFFERENT" to remove an existing dislike.
-    const path = action === "INDIFFERENT" ? "like/removelike" : "like/dislike";
-
+  // Shared headers for any authenticated InnerTube mutation/query.
+  async function buildHeaders(it) {
     const headers = {
       "Content-Type": "application/json",
       "X-Goog-AuthUser": "0",
@@ -68,6 +63,16 @@
     if (it.clientVersion) headers["X-Youtube-Client-Version"] = it.clientVersion;
     const auth = await authHeader();
     if (auth) headers["Authorization"] = auth;
+    return headers;
+  }
+
+  async function dislike(videoId, action) {
+    const it = innertube();
+    if (!it || !it.context) throw new Error("ytcfg / INNERTUBE_CONTEXT unavailable");
+
+    // action: "DISLIKE" to dislike, "INDIFFERENT" to remove an existing dislike.
+    const path = action === "INDIFFERENT" ? "like/removelike" : "like/dislike";
+    const headers = await buildHeaders(it);
 
     const res = await fetch(`${ORIGIN}/youtubei/v1/${path}?prettyPrint=false`, {
       method: "POST",
@@ -78,6 +83,52 @@
     return { status: res.status, ok: res.ok };
   }
 
+  const LIKE_STATES = new Set(["LIKE", "DISLIKE", "INDIFFERENT"]);
+
+  // Walk the `next` payload for the video's real like state. YouTube nests this
+  // under ever-changing view-model wrappers (likeStatusEntity,
+  // segmentedLikeDislikeButtonViewModel, ...), so we search for the first
+  // `likeStatus` string with an expected enum value rather than hard-code a path.
+  // FRAGILE: comments also carry likeStatus; the reel's own toggle appears first
+  // in the payload, but a YouTube reshuffle could break this. Fails soft (null).
+  function findLikeStatus(root) {
+    let found = null;
+    (function walk(o) {
+      if (found || !o || typeof o !== "object") return;
+      for (const k in o) {
+        const v = o[k];
+        if (k === "likeStatus" && typeof v === "string" && LIKE_STATES.has(v)) {
+          found = v;
+          return;
+        }
+        if (v && typeof v === "object") {
+          walk(v);
+          if (found) return;
+        }
+      }
+    })(root);
+    return found;
+  }
+
+  // Read YouTube's server-side like state for a video (M2 reconciliation). The
+  // dislike endpoint only tells us the request was accepted; `next` tells us what
+  // YouTube actually persisted (and reflects dislikes made elsewhere, e.g. /watch).
+  async function getStatus(videoId) {
+    const it = innertube();
+    if (!it || !it.context) throw new Error("ytcfg / INNERTUBE_CONTEXT unavailable");
+    const headers = await buildHeaders(it);
+
+    const res = await fetch(`${ORIGIN}/youtubei/v1/next?prettyPrint=false`, {
+      method: "POST",
+      credentials: "include",
+      headers,
+      body: JSON.stringify({ context: it.context, videoId }),
+    });
+    if (!res.ok) return { status: res.status, ok: false, likeStatus: null };
+    const json = await res.json();
+    return { status: res.status, ok: true, likeStatus: findLikeStatus(json) };
+  }
+
   window.addEventListener("message", async (ev) => {
     const d = ev.data;
     if (ev.source !== window || !d || d.tag !== MSG || d.dir !== "request") return;
@@ -85,8 +136,13 @@
     const reply = (extra) =>
       window.postMessage({ tag: MSG, dir: "response", nonce: d.nonce, ...extra }, ORIGIN);
     try {
-      const r = await dislike(d.videoId, d.action);
-      reply({ ok: r.ok, status: r.status, error: r.ok ? null : "HTTP " + r.status });
+      if (d.kind === "status") {
+        const r = await getStatus(d.videoId);
+        reply({ ok: r.ok, status: r.status, likeStatus: r.likeStatus, error: r.ok ? null : "HTTP " + r.status });
+      } else {
+        const r = await dislike(d.videoId, d.action);
+        reply({ ok: r.ok, status: r.status, error: r.ok ? null : "HTTP " + r.status });
+      }
     } catch (err) {
       reply({ ok: false, error: String(err && err.message ? err.message : err) });
     }
