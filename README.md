@@ -1,4 +1,4 @@
-# Dislike for Shorts
+# Dislike for YouTube Shorts
 
 A tiny, open-source browser extension that puts a **working dislike button back on
 YouTube Shorts**.

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Dislike for Shorts",
+  "name": "Dislike for YouTube Shorts",
   "version": "0.1.0",
   "description": "Adds a working dislike button back to YouTube Shorts.",
   "homepage_url": "https://github.com/AceHomard/shorts-dislike",
@@ -11,7 +11,7 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_title": "Dislike for Shorts",
+    "default_title": "Dislike for YouTube Shorts",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",
