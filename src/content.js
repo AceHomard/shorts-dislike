@@ -113,6 +113,21 @@ function reflectState() {
   btn.innerHTML = iconSvg(active);
 }
 
+// Brief, self-clearing shake + red tint on the button when a dislike click was
+// rejected (401/403/network). The only user-facing failure signal in the
+// extension: the other failure modes (no like button found, likeStatus unknown)
+// need none. Reuses the existing button, adds no DOM, and reverts on its own.
+function signalError() {
+  const btn = document.querySelector("." + BTN_CLASS);
+  if (!btn) return;
+  btn.classList.remove("sd-error"); // restart the animation if one is mid-flight
+  void btn.offsetWidth; // force reflow so re-adding the class replays it
+  btn.classList.add("sd-error");
+  btn.addEventListener("animationend", () => btn.classList.remove("sd-error"), {
+    once: true,
+  });
+}
+
 // Keep exactly one button present next to the visible like button.
 function inject() {
   // Only Shorts get the button. On /watch (and everywhere else) YouTube already
@@ -177,6 +192,7 @@ function requestDislike(videoId, action) {
       console.debug("[shorts-dislike] dislike ok", d.status);
     } else {
       console.error("[shorts-dislike] dislike failed:", d.error);
+      signalError();
     }
   }
 

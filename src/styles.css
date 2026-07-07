@@ -41,3 +41,19 @@
 
 /* Disliked state: the icon swaps to a solid thumb (handled in content.js). Colour
    comes from the rules above, so no override here (that's what forced it black). */
+
+/* Failed click: the dislike POST was rejected (401/403) or the network dropped.
+   The button never lit up (state only flips on success), so we add a brief,
+   self-clearing shake + red tint to say "your click didn't register". Purely
+   transient: content.js removes .sd-error when the animation ends, so the page
+   returns to its exact prior state. No new DOM, no layout shift. */
+.sd-dislike-btn.sd-error {
+  color: #cc0000;
+  animation: sd-shake 0.4s ease;
+}
+
+@keyframes sd-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-3px); }
+  40%, 80% { transform: translateX(3px); }
+}
