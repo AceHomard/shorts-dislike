@@ -30,7 +30,8 @@ Two scripts, because YouTube's auth/config lives in the page context:
 | `src/content.js` | isolated | Detects the active Short, injects the button, handles clicks |
 | `src/bridge.js` | main (page) | Reads `ytcfg`, builds the `SAPISIDHASH` header, calls the endpoint |
 
-They communicate through DOM `CustomEvent`s.
+They communicate through `window.postMessage` (tagged `sd:v1`), not
+`CustomEvent`, which Firefox blocks across the isolated/page world boundary.
 
 ## Install (developer / unpacked)
 
@@ -55,11 +56,17 @@ Then open any Short and look for the 👎 button next to the like button.
 
 ## Roadmap
 
-- [ ] Confirm the endpoint returns `200` end-to-end from the extension
-- [ ] Harden DOM detection across YouTube's staggered UI versions
-- [ ] Optional: also block the channel (like some competitors), behind a setting
-- [ ] Options page (enable/disable, feedback style)
-- [ ] Publish to Chrome Web Store & Firefox Add-ons
+Done so far:
+
+- [x] Dislike via YouTube's internal `like/dislike` endpoint (confirmed `200` end-to-end)
+- [x] Native look + automatic dark mode (matches YouTube's own button)
+- [x] Disliked state persists locally and reconciles with YouTube's real server status
+- [x] Visible feedback (shake) when a dislike request is rejected
+
+Next:
+
+- [ ] Publish to the Chrome Web Store and Firefox Add-ons
+- [ ] Keep the DOM selectors resilient to YouTube's staggered UI rollouts
 
 ## Contributing
 
