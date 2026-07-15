@@ -88,10 +88,14 @@ function isLiked(btn) {
   return !!btn && btn.getAttribute("aria-pressed") === "true";
 }
 
-// After we dislike, YouTube's own like button doesn't know and may still show as
-// liked. Disliking already clears the like server-side (verified end to end), so
-// click the native like button to turn its UI off too. syncingLike stops our own
-// like listener from treating this synthetic click as a user like.
+// If the Short is currently liked, un-like it BEFORE we send our dislike.
+// Clicking YouTube's like button makes YouTube un-highlight its own button and
+// fire its own `removelike`. Doing this FIRST means the server sees
+// `removelike` then our `dislike`, ending on DISLIKE. If we did it after, the
+// `removelike` would land last and wipe the dislike (server left INDIFFERENT
+// while our button still showed active). Our dislike also clears the like
+// server-side, so ordering is the only reason we click at all.
+// syncingLike stops our own like listener from treating this as a user like.
 function clearNativeLike() {
   const btn = nativeLikeButton();
   if (!isLiked(btn)) return; // only ever un-press; never risk adding a like
@@ -249,6 +253,8 @@ function onDislikeClick(e) {
 function requestDislike(videoId, action) {
   if (STATE.pending) return; // ignore rapid double-clicks while a call is in flight
   STATE.pending = true;
+  // Un-like first (if liked) so removelike reaches the server before our dislike.
+  if (action === "DISLIKE") clearNativeLike();
   const nonce = String(performance.now()) + ":" + Math.random();
 
   function onReply(ev) {
@@ -259,12 +265,8 @@ function requestDislike(videoId, action) {
     STATE.pending = false;
     if (d.ok) {
       // Update our source of truth, then persist + repaint.
-      if (action === "DISLIKE") {
-        disliked.add(videoId);
-        clearNativeLike(); // mutual exclusivity: our dislike replaced any like
-      } else {
-        disliked.delete(videoId);
-      }
+      if (action === "DISLIKE") disliked.add(videoId);
+      else disliked.delete(videoId);
       persist();
       reflectState();
       console.debug("[shorts-dislike] dislike ok", d.status);
