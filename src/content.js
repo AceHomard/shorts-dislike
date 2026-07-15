@@ -111,16 +111,23 @@ function buildButton() {
   btn.type = "button";
   btn.title = "Dislike this Short";
   btn.setAttribute("aria-label", "Dislike");
+  btn.setAttribute("aria-pressed", "false");
   btn.appendChild(iconEl(false));
   btn.addEventListener("click", onDislikeClick);
   return btn;
 }
 
 // Sync the button's look to the current Short's disliked state.
+// IMPORTANT: this runs on every MutationObserver frame (inject() is called a lot).
+// It must be a no-op when nothing changed. Rebuilding the icon unconditionally
+// swaps the <svg> out from under the pointer mid-click, so a mousedown landing on
+// the icon never becomes a click (the symptom: "clicking sometimes does nothing").
+// The `sd-active` class is our record of the painted state; bail if it matches.
 function reflectState() {
   const btn = document.querySelector("." + BTN_CLASS);
   if (!btn) return;
   const active = isActiveNow();
+  if (btn.classList.contains("sd-active") === active) return;
   btn.classList.toggle("sd-active", active);
   btn.setAttribute("aria-pressed", active ? "true" : "false");
   btn.replaceChildren(iconEl(active));
