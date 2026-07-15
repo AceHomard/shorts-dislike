@@ -14,6 +14,7 @@
 const BTN_CLASS = "sd-dislike-btn";
 const MSG = "sd:v1"; // tag so we ignore unrelated postMessages on the page
 const STATE = { pending: false }; // true while a dislike call is in flight
+let syncingLike = false; // true while WE synthetically toggle YouTube's like button
 
 // storage.local, promise-based, works the same in Chrome and Firefox (MV3).
 const store = (globalThis.browser || globalThis.chrome).storage.local;
@@ -71,6 +72,57 @@ function findLikeButton() {
     if (els.length) return els[0];
   }
   return null;
+}
+
+// The inner <button> of the native like control, and whether it's pressed.
+// aria-pressed reliably reflects the user's own like state (the aria-label is
+// only the public like count). We use these to keep like and dislike mutually
+// exclusive, the way YouTube does on regular videos.
+function nativeLikeButton() {
+  const like = findLikeButton();
+  if (!like) return null;
+  return like.matches("button") ? like : like.querySelector("button") || like.closest("button");
+}
+
+function isLiked(btn) {
+  return !!btn && btn.getAttribute("aria-pressed") === "true";
+}
+
+// After we dislike, YouTube's own like button doesn't know and may still show as
+// liked. Disliking already clears the like server-side (verified end to end), so
+// click the native like button to turn its UI off too. syncingLike stops our own
+// like listener from treating this synthetic click as a user like.
+function clearNativeLike() {
+  const btn = nativeLikeButton();
+  if (!isLiked(btn)) return; // only ever un-press; never risk adding a like
+  syncingLike = true;
+  btn.click();
+  syncingLike = false;
+}
+
+// Watch the native like button (once per element) so that when the user likes via
+// YouTube's own button, we drop our dislike, keeping the two mutually exclusive.
+function hookNativeLike() {
+  const btn = nativeLikeButton();
+  if (!btn || btn.dataset.sdLikeHooked) return;
+  btn.dataset.sdLikeHooked = "1";
+  btn.addEventListener("click", onNativeLikeClick, true);
+}
+
+function onNativeLikeClick(e) {
+  if (syncingLike) return; // our own synthetic click from clearNativeLike()
+  const videoId = currentShortId();
+  if (!videoId || !disliked.has(videoId)) return;
+  const btn = e.currentTarget;
+  // aria-pressed flips only after YouTube handles the click; read it next frame.
+  requestAnimationFrame(() => {
+    if (btn.getAttribute("aria-pressed") === "true") {
+      disliked.delete(videoId); // liking already cleared the dislike server-side
+      persist();
+      reflectState();
+      console.debug("[shorts-dislike] like pressed -> cleared our dislike", videoId);
+    }
+  });
 }
 
 // --- UI --------------------------------------------------------------------
@@ -166,6 +218,8 @@ function inject() {
   const like = findLikeButton();
   if (!like) return; // Short DOM not ready yet, or selectors outdated
 
+  hookNativeLike(); // so liking via YouTube's own button clears our dislike
+
   const host = like.closest("ytd-reel-video-renderer") || like.parentElement;
   if (!host || host.querySelector("." + BTN_CLASS)) {
     reflectState(); // button already there just make sure its state is current
@@ -205,8 +259,12 @@ function requestDislike(videoId, action) {
     STATE.pending = false;
     if (d.ok) {
       // Update our source of truth, then persist + repaint.
-      if (action === "DISLIKE") disliked.add(videoId);
-      else disliked.delete(videoId);
+      if (action === "DISLIKE") {
+        disliked.add(videoId);
+        clearNativeLike(); // mutual exclusivity: our dislike replaced any like
+      } else {
+        disliked.delete(videoId);
+      }
       persist();
       reflectState();
       console.debug("[shorts-dislike] dislike ok", d.status);
